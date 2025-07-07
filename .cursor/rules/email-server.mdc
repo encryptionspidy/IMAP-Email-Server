@@ -1,0 +1,92 @@
+---
+alwaysApply: false
+---
+Phase 1: Backend Core
+
+    Test‑First Implementation
+
+        For each feature (listEmails, getEmail):
+
+            Prompt: “Write Jest unit tests for <function> covering success, invalid payload, and IMAP errors.”
+
+            Generate minimal stub in code to satisfy tests.
+
+            Iterate until tests pass.
+
+    Modular Services
+
+        imapClient: pure functions listEmails(config) and getEmail(config, uid) without HTTP.
+
+        aiSummarizer: pure summarize(text) with feature toggle ENABLE_AI_SUMMARY.
+
+    Request Validation & Errors
+
+        Use Zod to validate IMAP config; guard-clauses at top.
+
+        Return structured JSON errors { error: { code, message } }.
+
+Phase 2: Integration & Coverage
+
+    Local IMAP Mock
+
+        Integrate MailDev or Docker‑mailserver in npm run test:integration.
+
+        Write integration tests that spin up the mock, invoke handlers via serverless-offline, and assert responses.
+
+    Coverage Threshold
+
+        Enforce jest --coverage --bail with minimum 70% lines, branches, functions, and statements.
+
+        CI blocks merge on coverage drop.
+
+Phase 3: HTTP Layer & Local Dev
+
+    Express + Serverless Handler
+
+        Wrap Express app in Lambda via serverless-http.
+
+        Define POST /emails/list and GET /emails/{id}.
+
+    Local Startup
+
+        Provide npm run dev → sls offline start.
+
+        Validate endpoints manually or via smoke tests before UI work.
+
+Phase 4: UI Stub & Validation
+
+    Minimal React + Vite
+
+        Two views: IMAP config form → list → detail with “Summarize” button.
+
+        Validate API calls against local endpoints; log errors.
+
+    Smoke‑Test UI
+
+        Manual walkthrough: configure, list, view, summarize.
+
+        Fix any backend/UI mismatches before deployment.
+
+Phase 5: AWS Deployment
+
+    Serverless Framework
+
+        serverless.yml with two functions, HTTP events, serverless-offline, and environment references.
+
+        Document AWS Setup in README (free‑tier Lambda/API Gateway, IAM basics).
+
+    Dry‑Run & Clean Up
+
+        sls deploy --stage dev; run basic smoke tests.
+
+        Provide sls remove instructions for teardown.
+
+General Rules
+
+    Secrets & Env Vars: all credentials via .env (local) or AWS SSM/Secrets Manager (prod).
+
+    Strict TypeScript: strict: true, consistent naming (camelCase, PascalCase).
+
+    TODO Annotations: flag any security or edge‑case concerns with // TODO: for later review.
+
+    CI Enforcement: lint, test, coverage must pass before merge.

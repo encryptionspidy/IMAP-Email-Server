@@ -1,0 +1,254 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Custom Styles */
+body {
+  @apply font-sans antialiased;
+}
+
+button {
+  @apply transition-all ease-in-out duration-200;
+}
+
+input:focus, textarea:focus {
+  @apply outline-none ring-2 ring-teal-500 ring-offset-2;
+}
+
+/* Professional Color Palette */
+:root {
+  --color-primary: #111827;
+  --color-primary-light: #374151;
+  --color-accent: #14b8a6;
+  --color-accent-light: #5eead4;
+  --color-background: #f8fafc;
+  --color-surface: #ffffff;
+  --color-border: #e2e8f0;
+  --color-text: #1e293b;
+  --color-text-secondary: #64748b;
+  --color-success: #10b981;
+  --color-warning: #f59e0b;
+  --color-error: #ef4444;
+}
+
+.dark {
+  --color-primary: #f9fafb;
+  --color-primary-light: #d1d5db;
+  --color-accent: #3b82f6;
+  --color-accent-light: #60a5fa;
+  --color-background: #1e1e2f;
+  --color-surface: #2d2d44;
+  --color-border: #374151;
+  --color-text: #f9fafb;
+  --color-text-secondary: #9ca3af;
+}
+
+/* Custom Components */
+.bg-light {
+  @apply bg-slate-50 dark:bg-slate-800;
+}
+
+.text-main {
+  @apply text-slate-900 dark:text-slate-100;
+}
+
+/* Smooth transitions */
+.transition-smooth {
+  @apply transition-all duration-300 ease-in-out;
+}
+
+/* Email list hover effects */
+.email-item {
+  @apply transition-all duration-200 ease-out;
+}
+
+.email-item:hover {
+  @apply bg-slate-50 dark:bg-slate-700/50 shadow-sm;
+}
+
+.email-item.active {
+  @apply bg-teal-50 dark:bg-teal-900/20 border-l-4 border-l-teal-500;
+}
+
+/* Loading animations */
+@keyframes shimmer {
+  0% {
+    background-position: -200px 0;
+  }
+  100% {
+    background-position: calc(200px + 100%) 0;
+  }
+}
+
+.shimmer {
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200px 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+.dark .shimmer {
+  background: linear-gradient(90deg, #374151 25%, #4b5563 50%, #374151 75%);
+  background-size: 200px 100%;
+}
+
+/* Brand styling */
+.brand-gradient {
+  background: linear-gradient(135deg, #14b8a6 0%, #3b82f6 100%);
+}
+
+.brand-text {
+  @apply font-bold tracking-tight;
+}
+
+/* Button styles */
+.btn-primary {
+  @apply bg-teal-600 hover:bg-teal-700 text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200;
+}
+
+.btn-secondary {
+  @apply bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 font-medium py-2 px-4 rounded-lg transition-colors duration-200;
+}
+
+/* Card styles */
+.card {
+  @apply bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700;
+}
+
+.card-hover {
+  @apply hover:shadow-md hover:border-slate-300 dark:hover:border-slate-600 transition-all duration-200;
+}
+
+/* Mobile optimizations */
+@media (max-width: 768px) {
+  /* Increase touch targets */
+  button, [role="button"] {
+    @apply min-h-[44px] min-w-[44px];
+  }
+  
+  /* Better spacing for mobile */
+  .email-item {
+    @apply py-4 px-3;
+  }
+  
+  /* Larger text on mobile */
+  .mobile-text-base {
+    @apply text-base;
+  }
+  
+  /* Hide less important content on mobile */
+  .mobile-hidden {
+    @apply hidden;
+  }
+  
+  /* Full width on mobile */
+  .mobile-full {
+    @apply w-full;
+  }
+  
+  /* Better modal sizing */
+  .modal-mobile {
+    @apply mx-2 my-4 max-h-[calc(100vh-2rem)];
+  }
+}
+
+/* Touch device optimizations */
+@media (hover: none) and (pointer: coarse) {
+  /* Remove hover effects on touch devices */
+  .hover\:bg-slate-50:hover {
+    background-color: inherit;
+  }
+  
+  /* Increase active state feedback */
+  .email-item:active {
+    @apply bg-slate-100 dark:bg-slate-600 scale-[0.98];
+  }
+  
+  button:active {
+    @apply scale-95;
+  }
+}
+
+/* Safe area insets for notched devices */
+@supports (padding-top: env(safe-area-inset-top)) {
+  .safe-area-top {
+    padding-top: env(safe-area-inset-top);
+  }
+  
+  .safe-area-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  
+  .safe-area-left {
+    padding-left: env(safe-area-inset-left);
+  }
+  
+  .safe-area-right {
+    padding-right: env(safe-area-inset-right);
+  }
+}
+
+/* Scroll behavior */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Custom scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-slate-100 dark:bg-slate-800;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-slate-300 dark:bg-slate-600 rounded-full;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-slate-400 dark:bg-slate-500;
+}
+
+/* Focus styles for accessibility */
+.focus-ring {
+  @apply focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-slate-800;
+}
+
+/* Animation utilities */
+@keyframes slideIn {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+@keyframes slideOut {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(100%);
+  }
+}
+
+.slide-in {
+  animation: slideIn 0.3s ease-out;
+}
+
+.slide-out {
+  animation: slideOut 0.3s ease-out;
+}
+
+/* Print styles */
+@media print {
+  .no-print {
+    display: none !important;
+  }
+  
+  .email-content {
+    @apply text-black bg-white;
+  }
+}
