@@ -8,9 +8,10 @@ export default defineConfig({
     port: 3002,
     proxy: {
       '/api': {
-        target: 'http://localhost:3000',
+        target: 'https://zbwddyowtg.execute-api.ap-south-1.amazonaws.com/dev',
         changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api/, ''),
+        secure: true,
+        // Don't rewrite the path - keep /api prefix as the AWS API expects it
       },
     },
   },

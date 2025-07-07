@@ -45,7 +45,7 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
   }
 
   // Email list endpoint
-  if (path === '/emails/list' && method === 'POST') {
+  if ((path === '/emails/list' || path === '/api/emails/list') && method === 'POST') {
     try {
       if (!event.body) {
         return {
@@ -65,8 +65,9 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
 
       const body: ListEmailsRequest = JSON.parse(event.body);
       
-      // Validate required fields
-      if (!body.host || !body.username || !body.password) {
+      // Validate required fields (support both username and user fields)
+      const username = body.username || (body as any).user;
+      if (!body.host || !username || !body.password) {
         return {
           statusCode: 400,
           headers: {
@@ -77,7 +78,7 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
           },
           body: JSON.stringify({
             success: false,
-            error: 'host, username, and password are required',
+            error: 'host, username (or user), and password are required',
           }),
         };
       }
@@ -87,7 +88,7 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
         host: body.host,
         port: body.port || 993,
         tls: body.tls !== false,
-        username: body.username,
+        username: username,
         password: body.password,
       };
 
@@ -205,7 +206,7 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
   }
 
   // Get single email endpoint
-  if (path?.startsWith('/emails/') && method === 'GET') {
+  if ((path?.startsWith('/emails/') || path?.startsWith('/api/emails/')) && method === 'GET') {
     try {
       const uid = path.split('/emails/')[1];
       if (!uid) {

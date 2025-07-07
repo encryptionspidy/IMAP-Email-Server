@@ -22,7 +22,11 @@ export class EnhancedHandler {
       hasBody: !!event.body
     }, null, 2));
 
-    const path = event.path;
+    // Normalize path - remove /api prefix if present
+    let path = event.path;
+    if (path.startsWith('/api')) {
+      path = path.substring(4) || '/';
+    }
     const method = event.httpMethod;
     const requestId = event.requestContext?.requestId;
 

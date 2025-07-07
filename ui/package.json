@@ -4,6 +4,7 @@
   "description": "React UI for IMAP Email Server API",
   "type": "module",
   "scripts": {
+    "dev:aws": "vite --mode production",
     "dev": "vite",
     "build": "tsc && vite build",
     "preview": "vite preview",

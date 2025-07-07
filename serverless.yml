@@ -6,12 +6,11 @@ provider:
   name: aws
   runtime: nodejs18.x
   stage: ${opt:stage, 'dev'}
-  region: ${opt:region, 'us-east-1'}
+  region: ${opt:region, 'ap-south-1'}
   memorySize: 512
   timeout: 30
   environment:
     NODE_ENV: ${self:provider.stage}
-    # TODO: Add your AI API key here
     GEMINI_API_KEY: ${env:GEMINI_API_KEY, 'AIzaSyCYot_GC3mx1yIi3RPmkLcwVghls5t9Yqo'}
   iam:
     role:
@@ -23,21 +22,9 @@ provider:
             - logs:PutLogEvents
           Resource: '*'
 
-plugins:
-  - serverless-offline
-
-custom:
-  serverless-offline:
-    httpPort: 8000
-    lambdaPort: 8001
-    noPrependStageInUrl: true
-
-build:
-  esbuild: true
-
 functions:
   api:
-    handler: dist/enhancedHandler.enhancedHandler
+    handler: dist/handler.handler
     events:
       - http:
           path: /{proxy+}
@@ -45,13 +32,20 @@ functions:
           cors: true
 
 package:
-  exclude:
-    - node_modules/**
-    - src/test/**
-    - coverage/**
-    - .git/**
-    - .vscode/**
-    - ui/**
-    - README.md
-    - .eslintrc.js
-    - jest.config.js 
+  patterns:
+    - '!src/**'
+    - '!tests/**'
+    - '!coverage/**'
+    - '!.git/**'
+    - '!.cursor/**'
+    - '!.vscode/**'
+    - '!ui/**'
+    - '!*.md'
+    - '!jest.config.js'
+    - '!eslint.config.js'
+    - '!tsconfig.json'
+    - '!webpack.config.js'
+    - 'dist/**'
+    - 'node_modules/**'
+    - 'package.json'
+    - 'package-lock.json'
