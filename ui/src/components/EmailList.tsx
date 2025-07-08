@@ -219,7 +219,7 @@ const EmailList: React.FC<EmailListProps> = ({ className }) => {
 
         <div className="flex items-center space-x-2">
           <button
-            onClick={() => setViewMode(viewMode === 'compact' ? 'comfortable' : 'compact')}
+            onClick={() => setViewMode(viewMode === 'compact' ? 'list' : 'compact')}
             className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
             title={viewMode === 'compact' ? 'Switch to comfortable view' : 'Switch to compact view'}
           >

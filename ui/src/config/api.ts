@@ -1,19 +1,21 @@
 // API configuration for different environments
+const AWS_ENDPOINT = import.meta.env.VITE_BACKEND_API_URL || 'https://zbwddyowtg.execute-api.ap-south-1.amazonaws.com/dev';
+const API_TIMEOUT = parseInt(import.meta.env.VITE_TIMEOUT || '30000');
+
 export const API_CONFIG = {
-  // For development, we use Vite proxy which forwards to AWS
-  // For production, you could build with direct AWS URLs
+  // For development, we use direct AWS Lambda endpoint
   development: {
-    baseURL: '/api', // Proxied through Vite to AWS
-    timeout: 30000,
+    baseURL: AWS_ENDPOINT,
+    timeout: API_TIMEOUT,
   },
   production: {
-    baseURL: '/api', // Could be changed to direct AWS URL if needed
-    timeout: 30000,
+    baseURL: AWS_ENDPOINT,
+    timeout: API_TIMEOUT,
   }
 };
 
 // Get current environment
-const isDevelopment = import.meta.env.DEV;
+const isDevelopment = (import.meta as any).env?.DEV || false;
 export const currentConfig = isDevelopment ? API_CONFIG.development : API_CONFIG.production;
 
 // AWS Lambda endpoint (for reference)

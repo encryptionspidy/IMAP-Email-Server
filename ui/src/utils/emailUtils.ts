@@ -1,5 +1,6 @@
 import { format, formatDistanceToNow, isToday, isYesterday, parseISO } from 'date-fns';
 import { Email, EmailAddress } from '../types/email';
+import { getApiUrl } from '../config/api';
 
 export const formatEmailDate = (date: Date | string): string => {
   const parsedDate = typeof date === 'string' ? parseISO(date) : date;
@@ -290,7 +291,7 @@ export const downloadAttachment = async (emailUid: string, attachmentIndex: numb
       folder: 'INBOX' // Could be made dynamic
     });
     
-    const response = await fetch(`/api/emails/${emailUid}/attachments/${attachmentIndex}/download?${queryParams.toString()}`);
+    const response = await fetch(`${getApiUrl('/emails')}/${emailUid}/attachments/${attachmentIndex}?${queryParams.toString()}`);
     
     if (!response.ok) {
       throw new Error(`Failed to download attachment: ${response.statusText}`);
@@ -338,7 +339,7 @@ export const debounce = <T extends (...args: any[]) => any>(
   func: T,
   wait: number
 ): ((...args: Parameters<T>) => void) => {
-  let timeout: NodeJS.Timeout;
+let timeout: number;
   return (...args: Parameters<T>) => {
     clearTimeout(timeout);
     timeout = setTimeout(() => func(...args), wait);

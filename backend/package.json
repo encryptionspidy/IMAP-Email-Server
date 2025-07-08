@@ -5,17 +5,14 @@
   "main": "dist/handler.js",
   "scripts": {
     "build": "tsc",
-    "dev": "npm run build && sls offline start",
+    "dev": "npm run build && sls deploy",
     "local": "npm run build && node dist/local-server.js",
     "local:dev": "ts-node src/local-server.ts",
-
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
     "lint": "eslint src/**/*.ts",
     "lint:fix": "eslint src/**/*.ts --fix",
-    "deploy": "npm run build && sls deploy",
-    "deploy:prod": "npm run build && sls deploy --stage prod",
     "clean": "rm -rf dist node_modules package-lock.json"
   },
   "keywords": [

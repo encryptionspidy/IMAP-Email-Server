@@ -13,6 +13,7 @@ import {
   CodeBracketIcon
 } from '@heroicons/react/24/outline';
 import { formatFileSize, parseEmailAddresses, validateEmail } from '../utils/emailUtils';
+import { getApiUrl } from '../config/api';
 import clsx from 'clsx';
 import toast from 'react-hot-toast';
 
@@ -159,14 +160,28 @@ const ComposeModal: React.FC<ComposeModalProps> = ({
         })
       );
       
-      const response = await fetch('/api/emails/send', {
+      const response = await fetch(getApiUrl('/emails/send'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          ...emailData,
-          attachments: attachmentsWithContent
+          smtpConfig: {
+            host: 'smtp.gmail.com',
+            port: 465,
+            secure: true,
+            username: config.username,
+            password: config.password
+          },
+          emailData: {
+            to: parseEmailAddresses(to).map(addr => addr.address),
+            cc: cc ? parseEmailAddresses(cc).map(addr => addr.address) : undefined,
+            bcc: bcc ? parseEmailAddresses(bcc).map(addr => addr.address) : undefined,
+            subject,
+            body,
+            htmlBody: isRichText ? body : undefined,
+            attachments: attachmentsWithContent
+          }
         })
       });
       

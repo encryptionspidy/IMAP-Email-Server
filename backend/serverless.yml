@@ -39,7 +39,7 @@ package:
     - '!.git/**'
     - '!.cursor/**'
     - '!.vscode/**'
-    - '!ui/**'
+    - '!../ui/**'
     - '!*.md'
     - '!jest.config.js'
     - '!eslint.config.js'

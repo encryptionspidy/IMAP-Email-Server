@@ -99,14 +99,14 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
       try {
         console.log('🔍 HANDLER: Calling client.listEmails with:', {
           folder: body.folder || 'INBOX',
-          limit: body.limit || 10,
+          limit: body.limit || 50,
           offset: body.offset || 0,
           sortOrder: body.sortOrder || 'desc'
         });
         
         const result = await client.listEmails(
           body.folder || 'INBOX',
-          body.limit || 10,
+          body.limit || 50,
           body.offset || 0,
           body.sortOrder || 'desc'
         );
@@ -205,8 +205,108 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
     }
   }
 
+  // AI summarize endpoint (must come before generic email endpoint)
+  if (path?.startsWith('/emails/') && path?.endsWith('/summarize') && method === 'GET') {
+    try {
+      const uid = path.split('/emails/')[1]?.split('/summarize')[0];
+      if (!uid) {
+        return {
+          statusCode: 400,
+          headers: {
+            'Content-Type': 'application/json',
+            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Headers': 'Content-Type',
+            'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+          },
+          body: JSON.stringify({
+            success: false,
+            error: 'Email UID is required',
+          }),
+        };
+      }
+
+      const queryParams = event.queryStringParameters || {};
+      
+      // Validate required fields
+      if (!queryParams['host'] || !queryParams['username'] || !queryParams['password']) {
+        return {
+          statusCode: 400,
+          headers: {
+            'Content-Type': 'application/json',
+            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Headers': 'Content-Type',
+            'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+          },
+          body: JSON.stringify({
+            success: false,
+            error: 'host, username, and password query parameters are required',
+          }),
+        };
+      }
+
+      const config: ImapConfig = {
+        host: queryParams['host'],
+        port: parseInt(queryParams['port'] || '993'),
+        tls: queryParams['tls'] !== 'false',
+        username: queryParams['username'],
+        password: queryParams['password'],
+      };
+
+      // Get the email first
+      const client = new WorkingImapClient();
+      await client.connect(config);
+      
+      try {
+        const email = await client.getEmail(
+          uid,
+          queryParams['folder'] || 'INBOX'
+        );
+        
+        // Use AI service to summarize
+        const aiService = new AiService();
+        const summary = await aiService.summarizeEmail(email.subject, email.textBody || email.body);
+        
+        return {
+          statusCode: 200,
+          headers: {
+            'Content-Type': 'application/json',
+            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Headers': 'Content-Type',
+            'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+          },
+          body: JSON.stringify({
+            success: true,
+            summary,
+            email: {
+              uid: email.uid,
+              subject: email.subject,
+              from: email.from,
+            },
+          }),
+        };
+      } finally {
+        await client.disconnect();
+      }
+    } catch (error) {
+      console.error('Error in /emails/:uid/summarize:', error);
+      return {
+        statusCode: 500,
+        headers: {
+          'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Headers': 'Content-Type',
+          'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+        },
+        body: JSON.stringify({
+          success: false,
+          error: error instanceof Error ? error.message : 'Internal server error',
+        }),
+      };
+    }
+  }
+
   // Get single email endpoint
-  if ((path?.startsWith('/emails/') || path?.startsWith('/api/emails/')) && method === 'GET') {
+  if ((path?.startsWith('/emails/') || path?.startsWith('/api/emails/')) && method === 'GET' && !path?.endsWith('/summarize')) {
     try {
       const uid = path.split('/emails/')[1];
       if (!uid) {
@@ -771,6 +871,95 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
       }
     } catch (error) {
       console.error('Error in /emails/:uid/summarize:', error);
+      return {
+        statusCode: 500,
+        headers: {
+          'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Headers': 'Content-Type',
+          'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+        },
+        body: JSON.stringify({
+          success: false,
+          error: error instanceof Error ? error.message : 'Internal server error',
+        }),
+      };
+    }
+  }
+
+  // List folders endpoint
+  if ((path === '/folders' || path === '/api/folders') && method === 'POST') {
+    try {
+      if (!event.body) {
+        return {
+          statusCode: 400,
+          headers: {
+            'Content-Type': 'application/json',
+            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Headers': 'Content-Type',
+            'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+          },
+          body: JSON.stringify({
+            success: false,
+            error: 'Request body is required',
+          }),
+        };
+      }
+
+      const body = JSON.parse(event.body);
+      
+      // Validate required fields (support both username and user fields)
+      const username = body.username || (body as any).user;
+      if (!body.host || !username || !body.password) {
+        return {
+          statusCode: 400,
+          headers: {
+            'Content-Type': 'application/json',
+            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Headers': 'Content-Type',
+            'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+          },
+          body: JSON.stringify({
+            success: false,
+            error: 'host, username (or user), and password are required',
+          }),
+        };
+      }
+
+      // Create IMAP config
+      const config: ImapConfig = {
+        host: body.host,
+        port: body.port || 993,
+        tls: body.tls !== false,
+        username: username,
+        password: body.password,
+      };
+
+      // Create IMAP client and get folders
+      const client = new WorkingImapClient();
+      await client.connect(config);
+      
+      try {
+        const folders = await client.listFolders();
+        
+        return {
+          statusCode: 200,
+          headers: {
+            'Content-Type': 'application/json',
+            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Headers': 'Content-Type',
+            'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+          },
+          body: JSON.stringify({
+            success: true,
+            folders,
+          }),
+        };
+      } finally {
+        await client.disconnect();
+      }
+    } catch (error) {
+      console.error('Error in /folders:', error);
       return {
         statusCode: 500,
         headers: {

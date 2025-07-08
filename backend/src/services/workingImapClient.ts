@@ -67,7 +67,26 @@ export class WorkingImapClient {
   }
 
   /**
+   * Get Gmail folder mapping
+   */
+  private getGmailFolderPath(folder: string): string {
+    const gmailFolderMap: { [key: string]: string } = {
+      'INBOX': 'INBOX',
+      'SENT': '[Gmail]/Sent Mail',
+      'DRAFTS': '[Gmail]/Drafts',
+      'SPAM': '[Gmail]/Spam',
+      'TRASH': '[Gmail]/Trash',
+      'starred': '[Gmail]/Starred',
+      'important': '[Gmail]/Important',
+      'archive': '[Gmail]/All Mail'
+    };
+    
+    return gmailFolderMap[folder.toUpperCase()] || folder;
+  }
+  
+  /**
    * List emails with basic pagination and optional preview content
+   * Updated to fetch ALL emails when limit is -1
    */
   async listEmails(
     folder: string = 'INBOX', 
@@ -81,11 +100,13 @@ export class WorkingImapClient {
     }
 
     try {
-      console.log(`📁 Opening mailbox: ${folder}`);
+      // Map folder to Gmail path if needed
+      const actualFolder = this.getGmailFolderPath(folder);
+      console.log(`📁 Opening mailbox: ${folder} -> ${actualFolder}`);
       
       // Open mailbox
-      const mailbox = await this.connection.mailboxOpen(folder);
-      this.currentFolder = folder;
+      const mailbox = await this.connection.mailboxOpen(actualFolder);
+      this.currentFolder = actualFolder;
       
       console.log(`📊 Mailbox info:`, {
         path: mailbox.path,
@@ -109,13 +130,25 @@ export class WorkingImapClient {
         return { emails: [], total: 0, hasMore: false };
       }
 
-      // Apply pagination
+      // Apply pagination - if limit is -1, fetch all emails
       const searchArray = Array.isArray(search) ? search : [];
       const sortedUids = sortOrder === 'desc' ? searchArray.reverse() : searchArray;
-      const paginatedUids = sortedUids.slice(offset, offset + limit);
-      const hasMore = offset + limit < total;
       
-      console.log(`📄 Pagination: offset=${offset}, limit=${limit}, hasMore=${hasMore}`);
+      let paginatedUids: any[];
+      let hasMore: boolean;
+      
+      if (limit === -1) {
+        // Fetch all emails
+        paginatedUids = sortedUids;
+        hasMore = false;
+        console.log(`📄 Fetching ALL emails: ${paginatedUids.length} emails`);
+      } else {
+        // Apply normal pagination
+        paginatedUids = sortedUids.slice(offset, offset + limit);
+        hasMore = offset + limit < total;
+        console.log(`📄 Pagination: offset=${offset}, limit=${limit}, hasMore=${hasMore}`);
+      }
+      
       console.log(`📋 UIDs to fetch:`, paginatedUids);
 
       // Fetch email headers and optionally preview content

@@ -6,21 +6,20 @@ import ComposeModal from './ComposeModal';
 import SettingsPanel from './SettingsPanel';
 import { useEmailStore } from '../stores/emailStore';
 import { useWebSocket } from '../hooks/useKeyboardShortcuts';
-import { PencilSquareIcon, CogIcon, ArrowRightOnRectangleIcon } from '@heroicons/react/24/outline';
+import { getApiUrl } from '../config/api';
+// Removed unused imports
 
 const EmailClient: React.FC = () => {
   const {
     currentEmail,
+    currentFolder,
     isComposeOpen,
     setComposeOpen,
     setEmails,
     setLoading,
     isLoading,
     isSidebarOpen,
-    setSidebarOpen,
-    account,
-    setAccount,
-    resetEmailConfig
+    setSidebarOpen
   } = useEmailStore();
   const { connectWebSocket, disconnectWebSocket } = useWebSocket();
 
@@ -36,72 +35,79 @@ const EmailClient: React.FC = () => {
     };
   }, [connectWebSocket, disconnectWebSocket]);
 
-  React.useEffect(() => {
-    // Fetch emails on mount using stored configuration
-    const fetchEmails = async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        // Get stored configuration
-        const storedConfig = sessionStorage.getItem('imapConfig');
-        if (!storedConfig) {
-          setError('No email configuration found. Please connect to your email server.');
-          return;
-        }
-        
-        const config = JSON.parse(storedConfig);
-        
-        console.log('📧 Making API request to /api/emails/list with config:', {
-          host: config.host,
-          username: config.username,
-          folder: 'INBOX',
-          limit: 20
-        });
-        
-        const response = await fetch('/api/emails/list', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            ...config,
-            folder: 'INBOX',
-            limit: 20
-          }),
-        });
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.error || 'Failed to fetch emails');
-        }
-        const data = await response.json();
-        console.log('📨 API Response:', {
-          success: data.success,
-          emailCount: data.emails?.length || 0,
-          total: data.total,
-          hasMore: data.hasMore,
-          error: data.error
-        });
-        
-        if (data.success && data.emails) {
-          // Transform dates from strings to Date objects
-          const emailsWithDates = data.emails.map((email: any) => ({
-            ...email,
-            date: new Date(email.date)
-          }));
-          setEmails(emailsWithDates);
-          console.log('✅ Emails loaded successfully:', emailsWithDates.length);
-        } else {
-          console.error('❌ API response error:', data.error);
-          setError(data.error || 'Failed to load emails');
-        }
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to load emails');
-      } finally {
-        setLoading(false);
+  // Create a function to fetch emails for a specific folder
+  const fetchEmailsForFolder = React.useCallback(async (folder: string) => {
+    setLoading(true);
+    setError(null);
+    try {
+      // Get stored configuration
+      const storedConfig = sessionStorage.getItem('imapConfig');
+      if (!storedConfig) {
+        setError('No email configuration found. Please connect to your email server.');
+        return;
       }
-    };
-    fetchEmails();
-    // Only run on mount
-    // eslint-disable-next-line
+      
+      const config = JSON.parse(storedConfig);
+      
+      console.log('📧 Making API request to /emails/list with config:', {
+        host: config.host,
+        username: config.username,
+        folder: folder,
+        limit: 50
+      });
+      
+      const response = await fetch(getApiUrl('/emails/list'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...config,
+          folder: folder,
+          limit: 50
+        }),
+      });
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to fetch emails');
+      }
+      const data = await response.json();
+      console.log('📨 API Response:', {
+        success: data.success,
+        emailCount: data.emails?.length || 0,
+        total: data.total,
+        hasMore: data.hasMore,
+        error: data.error,
+        folder: folder
+      });
+      
+      if (data.success && data.emails) {
+        // Transform dates from strings to Date objects
+        const emailsWithDates = data.emails.map((email: any) => ({
+          ...email,
+          date: new Date(email.date)
+        }));
+        setEmails(emailsWithDates);
+        console.log(`✅ Emails loaded successfully for ${folder}:`, emailsWithDates.length);
+      } else {
+        console.error('❌ API response error:', data.error);
+        setError(data.error || `Failed to load emails from ${folder}`);
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : `Failed to load emails from ${folder}`);
+    } finally {
+      setLoading(false);
+    }
+  }, [setEmails, setLoading]);
+
+  // Fetch emails on mount
+  React.useEffect(() => {
+    fetchEmailsForFolder(currentFolder);
   }, []);
+
+  // Listen for folder changes and refetch emails
+  React.useEffect(() => {
+    console.log('📁 Folder changed to:', currentFolder);
+    fetchEmailsForFolder(currentFolder);
+  }, [currentFolder, fetchEmailsForFolder]);
 
   if (isLoading) {
     return (

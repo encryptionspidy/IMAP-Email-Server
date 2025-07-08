@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useEmailStore } from '../stores/emailStore';
 import { formatEmailDate, downloadAttachment } from '../utils/emailUtils';
+import { getApiUrl } from '../config/api';
 import { 
   StarIcon,
   ArrowUturnLeftIcon,
@@ -23,11 +24,18 @@ interface FullEmailContent {
   attachments?: any[];
 }
 
+interface EmailSummary {
+  summary: string;
+  isLoading: boolean;
+  error: string | null;
+}
+
 const EmailDetail: React.FC = () => {
   const { currentEmail, setCurrentEmail, toggleStar, archiveEmails, deleteEmails, updateEmail } = useEmailStore();
   const [fullContent, setFullContent] = useState<FullEmailContent | null>(null);
   const [isLoadingContent, setIsLoadingContent] = useState(false);
   const [contentError, setContentError] = useState<string | null>(null);
+  const [aiSummary, setAiSummary] = useState<EmailSummary>({ summary: '', isLoading: false, error: null });
   
   if (!currentEmail) {
     return (
@@ -74,7 +82,7 @@ const EmailDetail: React.FC = () => {
   const handleAttachmentDownload = async (attachment: any, index: number) => {
     try {
       await downloadAttachment(
-        currentEmail.uid || currentEmail.id, 
+        currentEmail.id, 
         index, 
         attachment.filename || `attachment_${index + 1}`
       );
@@ -109,7 +117,7 @@ const EmailDetail: React.FC = () => {
         folder: email.folder || 'INBOX'
       });
       
-      const response = await fetch(`/api/emails/${email.uid}?${queryParams.toString()}`);
+      const response = await fetch(`${getApiUrl('/emails')}/${email.uid}?${queryParams.toString()}`);
       
       if (!response.ok) {
         throw new Error(`Failed to fetch email content: ${response.statusText}`);
@@ -149,7 +157,58 @@ const EmailDetail: React.FC = () => {
     }
   };
   
-  // Effect to fetch full content when email changes
+  // Function to fetch AI summary
+  const fetchAiSummary = async (email: any) => {
+    setAiSummary(prev => ({ ...prev, isLoading: true, error: null }));
+    
+    try {
+      console.log('Fetching AI summary for email UID:', email.uid);
+      
+      const storedConfig = sessionStorage.getItem('imapConfig');
+      if (!storedConfig) {
+        throw new Error('No IMAP configuration found');
+      }
+      
+      const config = JSON.parse(storedConfig);
+      
+      const queryParams = new URLSearchParams({
+        host: config.host,
+        port: config.port?.toString() || '993',
+        tls: config.tls !== false ? 'true' : 'false',
+        username: config.username,
+        password: config.password,
+        folder: email.folder || 'INBOX'
+      });
+      
+      const response = await fetch(`${getApiUrl('/emails')}/${email.uid}/summarize?${queryParams.toString()}`);
+      
+      if (!response.ok) {
+        throw new Error(`Failed to fetch AI summary: ${response.statusText}`);
+      }
+      
+      const data = await response.json();
+      
+      if (data.success && data.summary) {
+        setAiSummary({
+          summary: data.summary,
+          isLoading: false,
+          error: null
+        });
+        console.log('AI summary loaded successfully');
+      } else {
+        throw new Error(data.error || 'Failed to load AI summary');
+      }
+    } catch (error) {
+      console.error('Error fetching AI summary:', error);
+      setAiSummary({
+        summary: '',
+        isLoading: false,
+        error: error instanceof Error ? error.message : 'Failed to load AI summary'
+      });
+    }
+  };
+  
+  // Effect to fetch full content and AI summary when email changes
   useEffect(() => {
     if (currentEmail && (!currentEmail.body.html && !currentEmail.body.text || currentEmail.body.text === currentEmail.preview)) {
       fetchFullEmailContent(currentEmail);
@@ -161,6 +220,14 @@ const EmailDetail: React.FC = () => {
         textBody: currentEmail.body.text,
         attachments: currentEmail.attachments || []
       });
+    }
+    
+    // Always fetch AI summary when email changes
+    if (currentEmail) {
+      fetchAiSummary(currentEmail);
+    } else {
+      // Reset AI summary when no email selected
+      setAiSummary({ summary: '', isLoading: false, error: null });
     }
   }, [currentEmail?.id]);
   
@@ -303,6 +370,27 @@ const EmailDetail: React.FC = () => {
                 </div>
               )}
             </div>
+
+            {/* AI Summary */}
+            {(aiSummary.summary || aiSummary.isLoading) && (
+              <div className="mt-8 pt-6 border-t border-slate-200 dark:border-slate-700">
+                <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100 mb-3">
+                  AI Summary
+                </h3>
+                {aiSummary.isLoading ? (
+                  <div className="flex items-center space-x-2 text-slate-500 dark:text-slate-400">
+                    <div className="animate-spin rounded-full h-4 w-4 border-2 border-slate-300 border-t-slate-600"></div>
+                    <span className="text-sm">Generating summary...</span>
+                  </div>
+                ) : aiSummary.summary ? (
+                  <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                    <p className="text-sm text-slate-700 dark:text-slate-300 leading-relaxed">
+                      {aiSummary.summary}
+                    </p>
+                  </div>
+                ) : null}
+              </div>
+            )}
 
             {/* Attachments */}
             {fullContent?.attachments && fullContent.attachments.length > 0 && (

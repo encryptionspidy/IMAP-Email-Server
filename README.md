@@ -30,14 +30,16 @@ A serverless REST HTTP API that connects to any IMAP-enabled email server, built
 # 1. Clone and install
 git clone <your-repo-url>
 cd IMAP-Email-Server
-npm install
-cd ui && npm install && cd ..
+cd backend && npm install
+cd ../ui && npm install
 
-# 2. Start backend (Terminal 1)
+# 2. Start backend locally (Terminal 1)
+cd backend
 npm run local:dev
 
-# 3. Start frontend (Terminal 2) 
-cd ui && npm run dev
+# 3. Start frontend connected to local backend (Terminal 2)
+cd ui
+npm run dev
 
 # 4. Open http://localhost:3002 in your browser
 ```
@@ -79,21 +81,31 @@ AWS_PROFILE=default
 
 ### 3. Local Development
 
+**Frontend with Local Backend:**
 ```bash
-# Start the serverless API locally
-npm run dev
+# Terminal 1: Start backend locally
+cd backend
+npm run local:dev
 
-# In another terminal, start the React UI
+# Terminal 2: Start frontend (connects to local backend)
 cd ui
 npm run dev
 ```
 
-The API will be available at `http://localhost:3000` and the UI at `http://localhost:3001`.
+**Frontend with AWS Backend:**
+```bash
+# Start frontend (connects to AWS backend)
+cd ui
+npm run local:dev
+```
+
+The API will be available at `http://localhost:3000` and the UI at `http://localhost:3002`.
 
 ## 🧪 Testing
 
 ```bash
-# Run unit tests
+# Run backend tests
+cd backend
 npm test
 
 # Run tests with coverage
@@ -121,10 +133,8 @@ npm run lint
 
 ```bash
 # Deploy to dev stage
-npm run deploy
-
-# Deploy to production
-npm run deploy:prod
+cd backend
+npm run dev
 ```
 
 ### 3. Environment Variables

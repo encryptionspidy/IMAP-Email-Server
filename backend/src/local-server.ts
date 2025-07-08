@@ -1,6 +1,8 @@
 import express from 'express';
 import cors from 'cors';
 import { WorkingImapClient } from './services/workingImapClient';
+import { SmtpService } from './services/smtpService';
+import { AiService } from './services/aiService';
 import { ImapConfig, ListEmailsRequest } from './types';
 
 const app = express();
@@ -301,6 +303,94 @@ app.get('/emails/:uid/attachments/:index', async (req, res): Promise<any> => {
   }
 });
 
+// Send email endpoint
+app.post('/emails/send', async (req, res) => {
+  try {
+    const body = req.body;
+    
+    // Validate required fields for SMTP
+    if (!body.smtpConfig || !body.emailData) {
+      return res.status(400).json({
+        success: false,
+        error: 'smtpConfig and emailData are required',
+      });
+    }
+
+    const smtpService = new SmtpService();
+    await smtpService.connect(body.smtpConfig);
+    
+    try {
+      const result = await smtpService.sendEmail(body.emailData);
+      return res.json(result);
+    } finally {
+      await smtpService.disconnect();
+    }
+  } catch (error) {
+    console.error('Error in /emails/send:', error);
+    return res.status(500).json({
+      success: false,
+      error: error instanceof Error ? error.message : 'Internal server error',
+    });
+  }
+});
+
+// Email summarize endpoint
+app.get('/emails/:uid/summarize', async (req, res) => {
+  try {
+    const { uid } = req.params;
+    const queryParams = req.query;
+    
+    // Validate required fields
+    if (!queryParams['host'] || !queryParams['username'] || !queryParams['password']) {
+      return res.status(400).json({
+        success: false,
+        error: 'host, username, and password query parameters are required',
+      });
+    }
+
+    const config: ImapConfig = {
+      host: queryParams['host'] as string,
+      port: parseInt(queryParams['port'] as string || '993'),
+      tls: queryParams['tls'] !== 'false',
+      username: queryParams['username'] as string,
+      password: queryParams['password'] as string,
+    };
+
+    // Get the email first
+    const client = new WorkingImapClient();
+    await client.connect(config);
+    
+    try {
+      const email = await client.getEmail(
+        uid,
+        queryParams['folder'] as string || 'INBOX'
+      );
+      
+      // Use AI service to summarize
+      const aiService = new AiService();
+      const summary = await aiService.summarizeEmail(email.subject, email.textBody || email.body);
+      
+      return res.json({
+        success: true,
+        summary,
+        email: {
+          uid: email.uid,
+          subject: email.subject,
+          from: email.from,
+        },
+      });
+    } finally {
+      await client.disconnect();
+    }
+  } catch (error) {
+    console.error('Error in /emails/:uid/summarize:', error);
+    return res.status(500).json({
+      success: false,
+      error: error instanceof Error ? error.message : 'Internal server error',
+    });
+  }
+});
+
 // Debug endpoint for testing Gmail connection
 app.post('/debug/gmail', async (req, res) => {
   try {
@@ -406,6 +496,8 @@ app.listen(PORT, () => {
   console.log(`   GET  /test - Test endpoint`);
   console.log(`   POST /emails/list - List emails`);
   console.log(`   GET  /emails/:uid - Get single email`);
+  console.log(`   POST /emails/send - Send email`);
+  console.log(`   GET  /emails/:uid/summarize - Summarize email`);
   console.log(`   GET  /emails/:uid/attachments/:index - Download attachment`);
   console.log(`   POST /folders/list - List folders`);
   console.log(`   POST /debug/gmail - Debug Gmail connection`);

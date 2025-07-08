@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { EnvelopeIcon as MailIcon, LockClosedIcon, ServerIcon, UserIcon } from '@heroicons/react/24/outline'
 import { useEmailStore } from '../stores/emailStore'
+import { getApiUrl } from '../config/api'
 import toast from 'react-hot-toast'
 
 interface ConnectionConfig {
@@ -32,12 +33,16 @@ export default function ConnectionForm() {
     setError('')
 
     try {
-      const response = await fetch('/api/emails/list', {
+      const response = await fetch(getApiUrl('/emails/list'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(config),
+        body: JSON.stringify({
+          ...config,
+          folder: 'INBOX',
+          limit: 1  // Just test connection, don't need many emails
+        }),
       })
 
       if (!response.ok) {
