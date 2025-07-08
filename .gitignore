@@ -90,4 +90,4 @@ temp/
 
 # UI specific
 ui/dist/
-ui/.vite/ 
+ui/.vite/ cursorrules
