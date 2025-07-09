@@ -245,21 +245,7 @@ export const useKeyboardShortcuts = () => {
 export const useTheme = () => {
   const { settings, setSettings } = useEmailStore();
 
-  const toggleTheme = useCallback(() => {
-    const newTheme = settings.theme === 'light' ? 'dark' : 'light';
-    setSettings({ theme: newTheme });
-    localStorage.setItem('theme', newTheme);
-    if (newTheme === 'dark') {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
-    toast.success(`Switched to ${newTheme} theme`);
-  }, [settings.theme, setSettings]);
-
-  const setTheme = useCallback((theme: 'light' | 'dark' | 'system') => {
-    setSettings({ theme });
-    localStorage.setItem('theme', theme);
+  const applyTheme = useCallback((theme: 'light' | 'dark' | 'system') => {
     if (theme === 'system') {
       const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
       if (systemTheme === 'dark') {
@@ -272,17 +258,42 @@ export const useTheme = () => {
     } else {
       document.documentElement.classList.remove('dark');
     }
-  }, [setSettings]);
+  }, []);
 
-  // Apply theme on mount from localStorage
+  const toggleTheme = useCallback(() => {
+    const newTheme = settings.theme === 'light' ? 'dark' : 'light';
+    setSettings({ theme: newTheme });
+    localStorage.setItem('theme', newTheme);
+    applyTheme(newTheme);
+    toast.success(`Switched to ${newTheme} theme`);
+  }, [settings.theme, setSettings, applyTheme]);
+
+  const setTheme = useCallback((theme: 'light' | 'dark' | 'system') => {
+    setSettings({ theme });
+    localStorage.setItem('theme', theme);
+    applyTheme(theme);
+  }, [setSettings, applyTheme]);
+
+  // Apply theme on mount from localStorage - only run once
   useEffect(() => {
     const storedTheme = localStorage.getItem('theme');
     if (storedTheme === 'dark' || storedTheme === 'light') {
-      setTheme(storedTheme as 'light' | 'dark');
+      // Only update if different from current theme
+      if (storedTheme !== settings.theme) {
+        setSettings({ theme: storedTheme as 'light' | 'dark' });
+      }
+      applyTheme(storedTheme as 'light' | 'dark');
     } else {
-      setTheme(settings.theme);
+      // Initialize with default theme and apply it
+      applyTheme(settings.theme);
     }
-  }, []);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Empty dependency array to run only once
+
+  // Apply theme whenever settings.theme changes
+  useEffect(() => {
+    applyTheme(settings.theme);
+  }, [settings.theme, applyTheme]);
 
   return { theme: settings.theme, toggleTheme, setTheme };
 };

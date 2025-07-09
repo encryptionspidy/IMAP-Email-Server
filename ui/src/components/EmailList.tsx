@@ -289,8 +289,32 @@ const EmailList: React.FC<EmailListProps> = ({ className }) => {
           <EmailListSkeleton />
         ) : filteredEmails.length === 0 ? (
           <div className="p-8 text-center">
-            <InboxIcon className="h-12 w-12 text-slate-400 mx-auto mb-4" />
-            <p className="text-slate-600 dark:text-slate-400">No emails found</p>
+            {currentFolder === 'starred' ? (
+              <>
+                <StarIcon className="h-12 w-12 text-slate-400 mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-slate-900 dark:text-slate-100 mb-2">
+                  No starred emails
+                </h3>
+                <p className="text-slate-600 dark:text-slate-400 max-w-md mx-auto">
+                  Star important emails to find them easily later. You can star emails by clicking the star icon in the email list or detail view.
+                </p>
+              </>
+            ) : currentFolder === 'archive' ? (
+              <>
+                <InboxIcon className="h-12 w-12 text-slate-400 mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-slate-900 dark:text-slate-100 mb-2">
+                  No archived emails
+                </h3>
+                <p className="text-slate-600 dark:text-slate-400 max-w-md mx-auto">
+                  Archived emails will appear here. This folder may not be available with your current email provider.
+                </p>
+              </>
+            ) : (
+              <>
+                <InboxIcon className="h-12 w-12 text-slate-400 mx-auto mb-4" />
+                <p className="text-slate-600 dark:text-slate-400">No emails found</p>
+              </>
+            )}
           </div>
         ) : (
           <div>

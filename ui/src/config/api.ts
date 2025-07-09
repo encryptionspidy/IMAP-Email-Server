@@ -1,6 +1,6 @@
 // API configuration for different environments
-const AWS_ENDPOINT = import.meta.env.VITE_BACKEND_API_URL || 'https://zbwddyowtg.execute-api.ap-south-1.amazonaws.com/dev';
-const API_TIMEOUT = parseInt(import.meta.env.VITE_TIMEOUT || '30000');
+const AWS_ENDPOINT = (import.meta as any).env?.VITE_BACKEND_API_URL || 'https://zbwddyowtg.execute-api.ap-south-1.amazonaws.com/dev';
+const API_TIMEOUT = parseInt((import.meta as any).env?.VITE_TIMEOUT || '30000');
 
 export const API_CONFIG = {
   // For development, we use direct AWS Lambda endpoint

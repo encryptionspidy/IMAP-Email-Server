@@ -189,12 +189,14 @@ const EmailDetail: React.FC = () => {
       const data = await response.json();
       
       if (data.success && data.summary) {
+        // Handle summary being a string or object
+        const summaryText = typeof data.summary === 'string' ? data.summary : data.summary?.summary || 'No summary available';
         setAiSummary({
-          summary: data.summary,
+          summary: summaryText,
           isLoading: false,
           error: null
         });
-        console.log('AI summary loaded successfully');
+        console.log('AI summary loaded successfully:', summaryText);
       } else {
         throw new Error(data.error || 'Failed to load AI summary');
       }
@@ -372,7 +374,7 @@ const EmailDetail: React.FC = () => {
             </div>
 
             {/* AI Summary */}
-            {(aiSummary.summary || aiSummary.isLoading) && (
+            {(aiSummary.summary || aiSummary.isLoading || aiSummary.error) && (
               <div className="mt-8 pt-6 border-t border-slate-200 dark:border-slate-700">
                 <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100 mb-3">
                   AI Summary
@@ -381,6 +383,12 @@ const EmailDetail: React.FC = () => {
                   <div className="flex items-center space-x-2 text-slate-500 dark:text-slate-400">
                     <div className="animate-spin rounded-full h-4 w-4 border-2 border-slate-300 border-t-slate-600"></div>
                     <span className="text-sm">Generating summary...</span>
+                  </div>
+                ) : aiSummary.error ? (
+                  <div className="p-4 bg-amber-50 dark:bg-amber-900/20 rounded-lg border border-amber-200 dark:border-amber-800">
+                    <p className="text-sm text-amber-700 dark:text-amber-300 leading-relaxed">
+                      AI summary unavailable: {aiSummary.error.includes('Gemini') ? 'AI service not configured' : aiSummary.error}
+                    </p>
                   </div>
                 ) : aiSummary.summary ? (
                   <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">

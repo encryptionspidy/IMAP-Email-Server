@@ -11,7 +11,7 @@ provider:
   timeout: 30
   environment:
     NODE_ENV: ${self:provider.stage}
-    GEMINI_API_KEY: ${env:GEMINI_API_KEY, 'AIzaSyCYot_GC3mx1yIi3RPmkLcwVghls5t9Yqo'}
+    GEMINI_API_KEY: AIzaSyCYot_GC3mx1yIi3RPmkLcwVghls5t9Yqo
   iam:
     role:
       statements:

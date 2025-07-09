@@ -26,7 +26,7 @@ export class AiService {
     }
 
     try {
-      const model = this.genAI.getGenerativeModel({ model: 'gemini-pro' });
+      const model = this.genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
 
       const prompt = `Analyze this email and provide a concise summary:
         
@@ -113,7 +113,7 @@ Focus on extracting actionable information and determining the email's importanc
 Subject: ${subject}
 Body: ${body.substring(0, 1000)}`;
 
-      const response = await this.genAI.getGenerativeModel({ model: 'gemini-pro' }).generateContent(prompt);
+      const response = await this.genAI.getGenerativeModel({ model: 'gemini-1.5-flash' }).generateContent(prompt);
       const result = await response.response;
       const text = result.text();
       
@@ -183,7 +183,7 @@ Body: ${body.substring(0, 1000)}`;
 Subject: ${subject}
 Body: ${body.substring(0, 500)}`;
 
-      const response = await this.genAI.getGenerativeModel({ model: 'gemini-pro' }).generateContent(prompt);
+      const response = await this.genAI.getGenerativeModel({ model: 'gemini-1.5-flash' }).generateContent(prompt);
       const result = await response.response;
       const text = result.text();
 

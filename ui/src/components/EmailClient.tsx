@@ -49,6 +49,49 @@ const EmailClient: React.FC = () => {
       
       const config = JSON.parse(storedConfig);
       
+      // Handle special folders that might not be supported
+      if (folder === 'starred' || folder === 'archive') {
+        console.log(`📁 Attempting to fetch ${folder} folder`);
+        
+        // Try to fetch from the backend first
+        try {
+          const response = await fetch(getApiUrl('/emails/list'), {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              ...config,
+              folder: folder,
+              limit: 50
+            }),
+          });
+          
+          if (!response.ok) {
+            throw new Error('Folder not supported');
+          }
+          
+          const data = await response.json();
+          
+          if (data.success && data.emails) {
+            // Transform dates from strings to Date objects
+            const emailsWithDates = data.emails.map((email: any) => ({
+              ...email,
+              date: new Date(email.date)
+            }));
+            setEmails(emailsWithDates);
+            console.log(`✅ Emails loaded successfully for ${folder}:`, emailsWithDates.length);
+            return;
+          }
+        } catch (fetchError) {
+          console.log(`⚠️ ${folder} folder not available in backend, showing placeholder`);
+        }
+        
+        // Show placeholder message for unsupported folders
+        setEmails([]);
+        setError(null); // Clear any error
+        console.log(`📭 ${folder} folder is not available or empty`);
+        return;
+      }
+      
       console.log('📧 Making API request to /emails/list with config:', {
         host: config.host,
         username: config.username,
